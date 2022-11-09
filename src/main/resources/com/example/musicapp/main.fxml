@@ -15,7 +15,7 @@
     <center>
         <TableView fx:id="artistTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <columns>
-                <TableColumn prefWidth="${artistTable.width}" text="Artist's Name">
+                <TableColumn prefWidth="${artistTable.width}" text="Name">
                     <cellValueFactory>
                         <PropertyValueFactory property="name"/>
                     </cellValueFactory>
@@ -29,8 +29,8 @@
     <right>
         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="170.00" spacing="20.0" BorderPane.alignment="CENTER">
             <children>
-                <Button maxWidth="Infinity" mnemonicParsing="false" text="List Artists" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" text="Show Albums (artist)" />
+                <Button onAction="#createArtistsList" maxWidth="Infinity" mnemonicParsing="false" text="List Artists" />
+                <Button onAction="#listAlbumsWhenClick" maxWidth="Infinity" mnemonicParsing="false" text="Show Albums (artist)" />
                 <Button maxWidth="Infinity" mnemonicParsing="false" text="Update Artist" />
             </children>
             <BorderPane.margin>
@@ -41,7 +41,7 @@
     <bottom>
         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <children>
-                <ProgressBar visible="false" prefWidth="200.0" progress="0.0">
+                <ProgressBar fx:id="progressBar" visible="false" prefWidth="200.0" progress="0.0">
                     <HBox.margin>
                         <Insets left="50.0" />
                     </HBox.margin>

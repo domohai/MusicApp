@@ -1,10 +1,12 @@
 package com.example.musicapp;
 
+import com.example.musicapp.model.Album;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableView;
 import com.example.musicapp.model.Artist;
 import com.example.musicapp.model.Datasource;
@@ -13,7 +15,9 @@ import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
     @FXML
-    private TableView<Artist> artistTable;
+    private TableView artistTable;
+    @FXML
+    private ProgressBar progressBar;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -52,14 +56,32 @@ public class Controller implements Initializable {
     
     }
     
+    @FXML
+    public void listAlbumsWhenClick() {
+        if (!(artistTable.getSelectionModel().getSelectedItem() instanceof final Artist artist)) return;
+        Task<ObservableList<Album>> task = new Task<>() {
+            @Override
+            protected ObservableList<Album> call() {
+                return FXCollections.observableArrayList(Datasource.getInstance().queryAlbumsOrderByArtistID(artist.getId()));
+            }
+        };
+        artistTable.itemsProperty().bind(task.valueProperty());
+        new Thread(task).start();
+    }
+    
+    @FXML
     public void createArtistsList() {
         Task<ObservableList<Artist>> task = new GetAllArtistsTask();
         artistTable.itemsProperty().bind(task.valueProperty());
+        progressBar.progressProperty().bind(task.progressProperty());
+        progressBar.setVisible(true);
+        task.setOnSucceeded(e -> progressBar.setVisible(false));
+        task.setOnFailed(e -> progressBar.setVisible(false));
         new Thread(task).start();
     }
 }
 
-class GetAllArtistsTask extends Task {
+class GetAllArtistsTask extends Task<ObservableList<Artist>> {
     @Override
     public ObservableList<Artist> call() {
         return FXCollections.observableArrayList(Datasource.getInstance().queryArtists(Datasource.ORDER_BY_ASC));
