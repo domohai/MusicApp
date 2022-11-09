@@ -1,4 +1,4 @@
-package model;
+package com.example.musicapp.model;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public class Datasource {
                     " WHERE " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + " = \"";
 
     public static final String QUERY_ALBUMS_BY_ARTIST_SORT =
-            " ORDER BY " + TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + " COLLATE NOCASE ";
+            " ORDER BY LOWER(" + TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + ")";
 
     public static final String QUERY_ARTIST_FOR_SONG_START =
             "SELECT " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + ", " +
@@ -58,8 +58,8 @@ public class Datasource {
                     " WHERE " + TABLE_SONGS + "." + COLUMN_SONG_TITLE + " = \"";
 
     public static final String QUERY_ARTIST_FOR_SONG_SORT =
-            " ORDER BY " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + ", " +
-                    TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + " COLLATE NOCASE ";
+            " ORDER BY LOWER(" + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + "), LOWER(" +
+                    TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + ")";
 
     public static final String TABLE_ARTIST_SONG_VIEW = "artist_list";
 
@@ -85,7 +85,6 @@ public class Datasource {
             COLUMN_SONG_ALBUM + ", " + COLUMN_SONG_TRACK + " FROM " + TABLE_ARTIST_SONG_VIEW +
             " WHERE " + COLUMN_SONG_TITLE + " = ?";
 
-
     public static final String INSERT_ARTIST = "INSERT INTO " + TABLE_ARTISTS +
             '(' + COLUMN_ARTIST_NAME + ") VALUES(?)";
     public static final String INSERT_ALBUMS = "INSERT INTO " + TABLE_ALBUMS +
@@ -102,13 +101,10 @@ public class Datasource {
             TABLE_ALBUMS + " WHERE " + COLUMN_ALBUM_NAME + " = ?";
 
     private Connection conn;
-
     private PreparedStatement querySongInfoView;
-
     private PreparedStatement insertIntoArtists;
     private PreparedStatement insertIntoAlbums;
     private PreparedStatement insertIntoSongs;
-
     private PreparedStatement queryArtist;
     private PreparedStatement queryAlbum;
 
@@ -165,13 +161,13 @@ public class Datasource {
         }
     }
 
-    public List<model.Artist> queryArtists(int sortOrder) {
+    public List<com.example.musicapp.model.Artist> queryArtists(int sortOrder) {
         StringBuilder sb = new StringBuilder("SELECT * FROM ");
         sb.append(TABLE_ARTISTS);
         if (sortOrder != ORDER_BY_NONE) {
-            sb.append(" ORDER BY ");
+            sb.append(" ORDER BY LOWER(");
             sb.append(COLUMN_ARTIST_NAME);
-            sb.append(" COLLATE NOCASE ");
+            sb.append(")");
             if (sortOrder == ORDER_BY_DESC) {
                 sb.append("DESC");
             } else {
@@ -180,9 +176,9 @@ public class Datasource {
         }
         try (Statement statement = conn.createStatement();
              ResultSet results = statement.executeQuery(sb.toString())) {
-            List<model.Artist> artists = new ArrayList<>();
+            List<com.example.musicapp.model.Artist> artists = new ArrayList<>();
             while (results.next()) {
-                model.Artist artist = new model.Artist();
+                com.example.musicapp.model.Artist artist = new com.example.musicapp.model.Artist();
                 artist.setId(results.getInt(INDEX_ARTIST_ID));
                 artist.setName(results.getString(INDEX_ARTIST_NAME));
                 artists.add(artist);
@@ -274,7 +270,7 @@ public class Datasource {
             if(generatedKeys.next()) {
                 return generatedKeys.getInt(1);
             } else {
-                throw new SQLException("Couldn't get _id for artist");
+                throw new SQLException("Couldn't get id for artist");
             }
         }
     }
@@ -333,18 +329,3 @@ public class Datasource {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
