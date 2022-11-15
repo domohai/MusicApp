@@ -15,7 +15,7 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("main.fxml"));
         Parent root = fxmlLoader.load();
         Controller controller = fxmlLoader.getController();
-        controller.createArtistsList();
+        controller.listArtists();
         Scene scene = new Scene(root, 800, 600);
         stage.setTitle("MusicApp");
         stage.setScene(scene);
