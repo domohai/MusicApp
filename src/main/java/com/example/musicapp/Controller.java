@@ -2,6 +2,7 @@ package com.example.musicapp;
 
 import com.example.musicapp.model.Album;
 import com.example.musicapp.model.Song;
+import com.example.musicapp.model.SongDetail;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -15,12 +16,17 @@ import javafx.scene.layout.VBox;
 import util.Const;
 import util.Util;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 public class Controller implements Initializable {
     @FXML
     private TableView artistTable;
+    @FXML
+    private TableView songTable;
     @FXML
     private ProgressBar progressBar;
     
@@ -63,6 +69,8 @@ public class Controller implements Initializable {
     
     @FXML
     public void listArtists() {
+        artistTable.setVisible(true);
+        songTable.setVisible(false);
         Task<ObservableList<Artist>> task = new GetAllArtistsTask();
         artistTable.itemsProperty().bind(task.valueProperty());
         progressBar.progressProperty().bind(task.progressProperty());
@@ -75,6 +83,8 @@ public class Controller implements Initializable {
     @FXML
     public void listAlbums() {
         if (!(artistTable.getSelectionModel().getSelectedItem() instanceof final Artist artist)) return;
+        artistTable.setVisible(true);
+        songTable.setVisible(false);
         Task<ObservableList<Album>> task = new Task<>() {
             @Override
             protected ObservableList<Album> call() {
@@ -87,8 +97,10 @@ public class Controller implements Initializable {
     
     @FXML
     public void listSongs() {
-        Task<ObservableList<Song>> task = null;
+        Task<ObservableList<Song>> task;
         if (artistTable.getSelectionModel().getSelectedItem() instanceof final Album album) {
+            artistTable.setVisible(true);
+            songTable.setVisible(false);
             task = new Task<>() {
                 @Override
                 protected ObservableList<Song> call() {
@@ -96,6 +108,8 @@ public class Controller implements Initializable {
                 }
             };
         } else if (artistTable.getSelectionModel().getSelectedItem() instanceof final Artist artist) {
+            artistTable.setVisible(true);
+            songTable.setVisible(false);
             task = new Task<>() {
                 @Override
                 protected ObservableList<Song> call() {
@@ -104,6 +118,20 @@ public class Controller implements Initializable {
             };
         } else return;
         artistTable.itemsProperty().bind(task.valueProperty());
+        new Thread(task).start();
+    }
+    
+    @FXML
+    public void queryAllSongs() {
+        artistTable.setVisible(false);
+        songTable.setVisible(true);
+        Task<ObservableList<SongDetail>> task = new Task<>() {
+            @Override
+            protected ObservableList<SongDetail> call() {
+                return FXCollections.observableArrayList(Datasource.getInstance().queryAllSong());
+            }
+        };
+        songTable.itemsProperty().bind(task.valueProperty());
         new Thread(task).start();
     }
     
@@ -197,22 +225,46 @@ public class Controller implements Initializable {
         Label track = new Label("Track: ");
         track.setMinSize(Const.LABEL_WIDTH, Const.LABEL_HEIGHT);
         col1.getChildren().add(name);
-        col1.getChildren().add(album);
         col1.getChildren().add(artist);
+        col1.getChildren().add(album);
         col1.getChildren().add(track);
         
         VBox col2 = new VBox();
+        // name
         TextField nameField = new TextField();
         nameField.setMinSize(Const.FIELD_WIDTH, Const.FIELD_HEIGHT);
+        // artist
+        ComboBox<String> artistField = new ComboBox<>();
+        artistField.setEditable(true);
+        artistField.setMinSize(Const.FIELD_WIDTH, Const.FIELD_HEIGHT);
+        Task<ObservableList<Artist>> artistTask = new Task<>() {
+            @Override
+            protected ObservableList<Artist> call() {
+                return FXCollections.observableArrayList(Datasource.getInstance().queryArtists(Datasource.ORDER_BY_ASC));
+            }
+        };
+        new Thread(artistTask).start();
+        ObservableList<Artist> artistNames;
+        try {
+            artistNames = FXCollections.observableArrayList(artistTask.get());
+        } catch (ExecutionException | InterruptedException e) {
+            System.out.println("Error when get artist's names");
+            return;
+        }
+        List<String> artistNameList = new ArrayList<>();
+        for (Artist a : artistNames) {
+            artistNameList.add(a.getName());
+        }
+        artistField.setItems(FXCollections.observableArrayList(artistNameList));
+        // album
         TextField albumField = new TextField();
         albumField.setMinSize(Const.FIELD_WIDTH, Const.FIELD_HEIGHT);
-        TextField artistField = new TextField();
-        artistField.setMinSize(Const.FIELD_WIDTH, Const.FIELD_HEIGHT);
+        // track
         TextField trackField = new TextField();
         trackField.setMinSize(Const.FIELD_WIDTH, Const.FIELD_HEIGHT);
         col2.getChildren().add(nameField);
-        col2.getChildren().add(albumField);
         col2.getChildren().add(artistField);
+        col2.getChildren().add(albumField);
         col2.getChildren().add(trackField);
     
         HBox box = new HBox();
@@ -224,14 +276,16 @@ public class Controller implements Initializable {
         if (result.isEmpty() || result.get() == ButtonType.CANCEL) {
             return;
         }
+        
         String songName = nameField.getText();
         String albumName = albumField.getText();
-        String artistName = artistField.getText();
+        String artistName = artistField.getEditor().getText();
         String trackSong = trackField.getText();
         if (!Util.isNumeric(trackSong) || songName.equals("")
         || albumName.equals("") || artistName.equals("")) return;
         int songTrack = Integer.parseInt(trackField.getText());
         Datasource.getInstance().insertSong(songName, artistName, albumName, songTrack);
+        artistTable.refresh();
     }
     
     @FXML

@@ -49,6 +49,13 @@ public class Datasource {
             + "." + COLUMN_ALBUM_ID + " INNER JOIN " + TABLE_ARTISTS + " ON " + TABLE_ALBUMS
             + "." + COLUMN_ALBUM_ARTIST_ID + " = " + TABLE_ARTISTS + "." + COLUMN_ARTIST_ID
             + " WHERE "+ TABLE_ARTISTS + "." + COLUMN_ARTIST_ID + " = ?";
+    public static final String QUERY_ALL_SONGS = "SELECT " + TABLE_SONGS + "." + COLUMN_SONG_TITLE
+            + ", " + TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + ", " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME
+            + " FROM " + TABLE_SONGS + " RIGHT JOIN " + TABLE_ALBUMS + " ON " + TABLE_SONGS + "."
+            + COLUMN_SONG_ALBUM_ID + " = " + TABLE_ALBUMS + "." + COLUMN_ALBUM_ID + " RIGHT JOIN "
+            + TABLE_ARTISTS + " ON " + TABLE_ALBUMS + "." + COLUMN_ALBUM_ARTIST_ID + " = "
+            + TABLE_ARTISTS + "." + COLUMN_ARTIST_ID + " WHERE " + TABLE_SONGS + "." + COLUMN_SONG_TITLE
+            + " IS NOT NULL";
     
     // insert
     public static final String INSERT_ARTIST = "INSERT INTO " + TABLE_ARTISTS +
@@ -89,6 +96,7 @@ public class Datasource {
     private PreparedStatement queryAlbumsByArtistID = null;
     private PreparedStatement querySongByAlbumID = null;
     private PreparedStatement querySongByArtist = null;
+    private PreparedStatement queryAllSongs = null;
     private PreparedStatement updateArtist = null;
     private PreparedStatement updateAlbum = null;
     private PreparedStatement updateSong = null;
@@ -114,6 +122,7 @@ public class Datasource {
             querySongByAlbumID = connection.prepareStatement(QUERY_SONG_BY_ALBUM_ID);
             querySongByArtist = connection.prepareStatement(QUERY_SONGS_BY_ARTIST);
             queryAlbumsByArtistID = connection.prepareStatement(QUERY_ALBUMS_BY_ARTIST_ID);
+            queryAllSongs = connection.prepareStatement(QUERY_ALL_SONGS);
             updateArtist = connection.prepareStatement(UPDATE_ARTIST);
             updateAlbum = connection.prepareStatement(UPDATE_ALBUM);
             updateSong = connection.prepareStatement(UPDATE_SONG);
@@ -137,6 +146,7 @@ public class Datasource {
             if (queryArtist != null) queryArtist.close();
             if (queryAlbum != null) queryAlbum.close();
             if (queryAlbumsByArtistID != null) queryAlbumsByArtistID.close();
+            if (queryAllSongs != null) queryAllSongs.close();
             if (updateArtist != null) updateArtist.close();
             if (updateAlbum != null) updateAlbum.close();
             if (updateSong != null) updateSong.close();
@@ -237,6 +247,25 @@ public class Datasource {
             return songs;
         } catch (SQLException e) {
             System.out.println("Failed to query song by artist!");
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public List<SongDetail> queryAllSong() {
+        try {
+            ResultSet result = queryAllSongs.executeQuery();
+            List<SongDetail> songs = new ArrayList<>();
+            while (result.next()) {
+                SongDetail song = new SongDetail();
+                song.setTitle(result.getString(1));
+                song.setAlbum(result.getString(2));
+                song.setArtist(result.getString(3));
+                songs.add(song);
+            }
+            return songs;
+        } catch (SQLException e) {
+            System.out.println("Failed to query all songs!");
             e.printStackTrace();
             return null;
         }
